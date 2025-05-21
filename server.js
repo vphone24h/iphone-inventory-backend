@@ -1,24 +1,32 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config(); // ✅ Load biến môi trường
-const bcrypt = require('bcryptjs');           // ✅ Thêm cho login
-const jwt = require('jsonwebtoken');          // ✅ Thêm cho login
-const Inventory = require('./models/Inventory'); // Model sản phẩm
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const Inventory = require('./models/Inventory');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ✅ Middleware
+app.use(cors({
+  origin: 'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app', // domain frontend Vercel
+  credentials: true
+}));
 app.use(express.json());
+
+// ✅ Gắn route
+app.use('/api', authRoutes);
 
 // ✅ Tài khoản admin mặc định
 const adminAccount = {
   email: 'admin@vphone.vn',
-  password: bcrypt.hashSync('123456', 8) // Mật khẩu mã hoá
+  password: bcrypt.hashSync('123456', 8)
 };
 
-// Kết nối MongoDB
+// ✅ Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -26,12 +34,12 @@ mongoose.connect(process.env.MONGODB_URI, {
   .then(() => console.log('✅ Kết nối MongoDB thành công'))
   .catch(err => console.error('❌ Kết nối MongoDB lỗi:', err));
 
-// API kiểm tra hoạt động
+// ✅ Route kiểm tra hoạt động
 app.get('/', (req, res) => {
   res.send('🎉 Backend đang chạy!');
 });
 
-// ==================== API ĐĂNG NHẬP ADMIN ====================
+// ================= API ĐĂNG NHẬP =================
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -52,7 +60,7 @@ app.post('/api/login', async (req, res) => {
   });
 });
 
-// ==================== API NHẬP HÀNG ====================
+// ================= API NHẬP HÀNG =================
 app.post('/api/nhap-hang', async (req, res) => {
   try {
     const { imei, sku, price_import, product_name, import_date, supplier, branch, note } = req.body;
@@ -78,7 +86,7 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
-// ==================== API XUẤT HÀNG ====================
+// ================= API XUẤT HÀNG =================
 app.post('/api/xuat-hang', async (req, res) => {
   try {
     const { imei, price_sell } = req.body;
@@ -107,7 +115,7 @@ app.post('/api/xuat-hang', async (req, res) => {
   }
 });
 
-// ==================== API LẤY TỒN KHO ====================
+// ================= API LẤY TỒN KHO =================
 app.get('/api/ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -123,7 +131,7 @@ app.get('/api/ton-kho', async (req, res) => {
   }
 });
 
-// ==================== API CẢNH BÁO TỒN KHO < 2 ====================
+// ================= API CẢNH BÁO TỒN KHO < 2 =================
 app.get('/api/canh-bao-ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -165,7 +173,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
-// ==================== KHỞI ĐỘNG SERVER ====================
+// ================= KHỞI ĐỘNG SERVER =================
 app.listen(4000, () => {
   console.log('🚀 Server đang chạy tại http://localhost:4000');
 });
