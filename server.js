@@ -8,14 +8,26 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
-// ✅ Cấu hình CORS cho cả frontend local và Vercel
+// ✅ CORS đầy đủ cho localhost và Vercel
+const allowedOrigins = [
+  'http://localhost:5174',
+  'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
+  'https://iphone-inventory-frontend.vercel.app' // frontend chính thức
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5174',
-    'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('❌ CORS bị chặn: ' + origin));
+    }
+  },
   credentials: true
 }));
+
+app.options('*', cors()); // ✅ cho phép preflight (OPTIONS)
+
 app.use(express.json());
 
 // ✅ Gắn route xác thực admin (đăng ký, đăng nhập)
