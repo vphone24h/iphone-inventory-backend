@@ -2,62 +2,36 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
 
 const app = express();
 
-// ✅ Middleware
+// ✅ Cấu hình CORS cho cả frontend local và Vercel
 app.use(cors({
-  origin: 'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app', // domain frontend Vercel
+  origin: [
+    'http://localhost:5174',
+    'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app'
+  ],
   credentials: true
 }));
 app.use(express.json());
 
-// ✅ Gắn route
+// ✅ Gắn route xác thực admin (đăng ký, đăng nhập)
 app.use('/api', authRoutes);
-
-// ✅ Tài khoản admin mặc định
-const adminAccount = {
-  email: 'admin@vphone.vn',
-  password: bcrypt.hashSync('123456', 8)
-};
 
 // ✅ Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('✅ Kết nối MongoDB thành công'))
-  .catch(err => console.error('❌ Kết nối MongoDB lỗi:', err));
+.then(() => console.log('✅ Kết nối MongoDB thành công'))
+.catch(err => console.error('❌ Kết nối MongoDB lỗi:', err));
 
-// ✅ Route kiểm tra hoạt động
+// ✅ Kiểm tra hoạt động
 app.get('/', (req, res) => {
   res.send('🎉 Backend đang chạy!');
-});
-
-// ================= API ĐĂNG NHẬP =================
-app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (email !== adminAccount.email) {
-    return res.status(401).json({ message: '❌ Tài khoản không đúng' });
-  }
-
-  const isMatch = await bcrypt.compare(password, adminAccount.password);
-  if (!isMatch) {
-    return res.status(401).json({ message: '❌ Mật khẩu sai' });
-  }
-
-  const token = jwt.sign({ email }, 'vphone_secret_key', { expiresIn: '1d' });
-
-  res.json({
-    message: '✅ Đăng nhập thành công',
-    token
-  });
 });
 
 // ================= API NHẬP HÀNG =================
