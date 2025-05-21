@@ -22,3 +22,6 @@
     "react-chartjs-2": "^5.3.0"
   }
 }
+"engines": {
+  "node": "18.x"
+}
