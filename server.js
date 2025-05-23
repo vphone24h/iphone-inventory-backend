@@ -145,7 +145,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
 // ========== API XUẤT ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
-    const { imei, price_sell } = req.body;
+    const { imei, price_sell, customer_name, warranty, note, sku, product_name, sold_date } = req.body;
 
     const item = await Inventory.findOne({ imei });
     if (!item) {
@@ -158,11 +158,16 @@ app.post('/api/xuat-hang', async (req, res) => {
 
     item.status = 'sold';
     item.giaBan = price_sell;
-    item.sold_date = new Date();
+    item.sold_date = sold_date ? new Date(sold_date) : new Date();
+    item.customer_name = customer_name || '';
+    item.warranty = warranty || '';
+    item.note = note || '';
+    item.sku = sku || item.sku;
+    item.product_name = product_name || item.product_name;
 
     await item.save();
 
-    const profit = item.giaBan - item.price_import;
+    const profit = (item.giaBan || 0) - (item.price_import || 0);
 
     res.status(200).json({ message: '✅ Xuất hàng thành công!', item, profit });
   } catch (error) {
