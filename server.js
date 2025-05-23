@@ -227,6 +227,70 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
+// ========== BỔ SUNG 3 API QUẢN LÝ XUẤT HÀNG ==========
+/**
+ * Lấy danh sách đơn đã xuất (status === 'sold')
+ * GET /api/xuat-hang-list
+ */
+app.get('/api/xuat-hang-list', async (req, res) => {
+  try {
+    const items = await Inventory.find({ status: 'sold' }).sort({ sold_date: -1 });
+    res.status(200).json({ items });
+  } catch (error) {
+    res.status(500).json({ message: '❌ Lỗi lấy danh sách xuất hàng', error: error.message });
+  }
+});
+
+/**
+ * Cập nhật lại đơn xuất hàng (theo id)
+ * PUT /api/xuat-hang/:id
+ */
+app.put('/api/xuat-hang/:id', async (req, res) => {
+  try {
+    // Cập nhật các trường thông tin đơn đã xuất
+    const updateFields = {
+      ...req.body,
+      status: 'sold', // Đảm bảo trạng thái vẫn là sold
+    };
+
+    const updated = await Inventory.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: '❌ Không tìm thấy đơn xuất để cập nhật.' });
+    }
+    res.status(200).json({ message: '✅ Đã cập nhật đơn xuất!', item: updated });
+  } catch (error) {
+    res.status(500).json({ message: '❌ Lỗi khi cập nhật đơn xuất', error: error.message });
+  }
+});
+
+/**
+ * Xoá đơn xuất hàng (và cập nhật lại tồn kho)
+ * DELETE /api/xuat-hang/:id
+ */
+app.delete('/api/xuat-hang/:id', async (req, res) => {
+  try {
+    // Tìm đơn xuất hàng
+    const item = await Inventory.findById(req.params.id);
+    if (!item || item.status !== 'sold') {
+      return res.status(404).json({ message: '❌ Không tìm thấy đơn xuất hàng.' });
+    }
+
+    // Cập nhật lại trạng thái máy về 'in_stock'
+    item.status = 'in_stock';
+    item.giaBan = undefined;
+    item.sold_date = undefined;
+    item.customer_name = undefined;
+    item.warranty = undefined;
+    // Có thể xoá thêm các trường khác nếu muốn reset hoàn toàn đơn xuất
+
+    await item.save();
+
+    res.status(200).json({ message: '✅ Đã chuyển máy về tồn kho!', item });
+  } catch (error) {
+    res.status(500).json({ message: '❌ Lỗi khi xoá đơn xuất', error: error.message });
+  }
+});
+
 app.listen(4000, () => {
   console.log('🚀 Server đang chạy tại http://localhost:4000');
 });
