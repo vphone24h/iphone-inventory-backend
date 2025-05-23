@@ -7,6 +7,10 @@ const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
 const reportRoutes = require('./routes/report');
 
+// ======= Thêm branch & category routes =======
+const branchRoutes = require('./routes/branch');
+const categoryRoutes = require('./routes/category');
+
 const app = express();
 
 const allowedOrigins = [
@@ -31,6 +35,10 @@ app.use(express.json());
 
 app.use('/api', authRoutes);
 app.use('/api', reportRoutes);
+
+// ======= Dùng branch & category routes =========
+app.use('/api/branches', branchRoutes);
+app.use('/api/categories', categoryRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
