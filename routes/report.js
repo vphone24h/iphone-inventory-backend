@@ -1,16 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const Inventory = require('../models/Inventory');
-const { sendResetPasswordEmail } = require('../utils/mail'); // 👈 Thêm dòng này
+const { sendResetPasswordEmail } = require('../utils/mail');
 
-// ==================== API: Báo cáo lợi nhuận ====================
+// ==================== API: Báo cáo lợi nhuận có lọc ====================
 router.get('/bao-cao-loi-nhuan', async (req, res) => {
   try {
-    const soldItems = await Inventory.find({ status: 'sold' });
+    const { from, to, branch } = req.query;
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setDate(toDate.getDate() + 1); // Bao gồm cả ngày cuối cùng
+
+    const query = {
+      status: 'sold',
+      sold_date: { $gte: fromDate, $lt: toDate }
+    };
+
+    if (branch && branch !== 'all') {
+      query.branch = branch;
+    }
+
+    const soldItems = await Inventory.find(query);
 
     const totalDevicesSold = soldItems.length;
-    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.giaBan || 0), 0);
-    const totalCost = soldItems.reduce((sum, item) => sum + (item.giaNhap || 0), 0);
+    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.price_sell || 0), 0);
+    const totalCost = soldItems.reduce((sum, item) => sum + (item.price_import || 0), 0);
     const totalProfit = totalRevenue - totalCost;
 
     res.status(200).json({
@@ -21,8 +36,8 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
       totalProfit
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: '❌ Lỗi khi lấy báo cáo lợi nhuận' });
+    console.error('❌ Lỗi khi lấy báo cáo lợi nhuận:', err);
+    res.status(500).json({ message: '❌ Lỗi server khi lấy báo cáo' });
   }
 });
 
