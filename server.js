@@ -5,11 +5,10 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
-const reportRoutes = require('./routes/report'); // ✅ Thêm route báo cáo & nhập hàng GET
+const reportRoutes = require('./routes/report');
 
 const app = express();
 
-// ✅ CORS đầy đủ cho localhost và Vercel
 const allowedOrigins = [
   'http://localhost:5174',
   'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
@@ -30,11 +29,9 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ✅ Gắn các route
 app.use('/api', authRoutes);
 app.use('/api', reportRoutes);
 
-// ✅ Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -42,7 +39,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('✅ Kết nối MongoDB thành công'))
 .catch(err => console.error('❌ Kết nối MongoDB lỗi:', err));
 
-// ✅ Kiểm tra hoạt động
 app.get('/', (req, res) => {
   res.send('🎉 Backend đang chạy!');
 });
@@ -50,11 +46,24 @@ app.get('/', (req, res) => {
 // ========== API NHẬP HÀNG ==========
 app.post('/api/nhap-hang', async (req, res) => {
   try {
-    const { imei, sku, price_import, product_name, import_date, supplier, branch, note } = req.body;
+    const {
+      imei,
+      sku,
+      price_import,
+      product_name,
+      import_date,
+      supplier,
+      branch,
+      note,
+      quantity,
+      category
+    } = req.body;
 
-    const exists = await Inventory.findOne({ imei });
-    if (exists) {
-      return res.status(400).json({ message: '❌ IMEI này đã tồn tại trong kho.' });
+    if (imei) {
+      const exists = await Inventory.findOne({ imei });
+      if (exists) {
+        return res.status(400).json({ message: '❌ IMEI này đã tồn tại trong kho.' });
+      }
     }
 
     const newItem = new Inventory({
@@ -62,11 +71,13 @@ app.post('/api/nhap-hang', async (req, res) => {
       sku,
       price_import,
       product_name,
-      tenSanPham: product_name, // ✅ Bổ sung để hiển thị đúng Tên sản phẩm
+      tenSanPham: product_name,
       import_date,
       supplier,
       branch,
       note,
+      quantity,
+      category
     });
 
     await newItem.save();
@@ -81,7 +92,7 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
-// ========== ✅ API SỬA HÀNG ĐÃ NHẬP ==========
+// ========== API SỬA HÀNG ==========
 app.put('/api/nhap-hang/:id', async (req, res) => {
   try {
     const updatedItem = await Inventory.findByIdAndUpdate(
@@ -104,7 +115,7 @@ app.put('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ========== ✅ API XOÁ HÀNG ĐÃ NHẬP ==========
+// ========== API XOÁ ==========
 app.delete('/api/nhap-hang/:id', async (req, res) => {
   try {
     const deletedItem = await Inventory.findByIdAndDelete(req.params.id);
@@ -123,7 +134,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ========== API XUẤT HÀNG ==========
+// ========== API XUẤT ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
     const { imei, price_sell } = req.body;
@@ -152,7 +163,7 @@ app.post('/api/xuat-hang', async (req, res) => {
   }
 });
 
-// ========== API LẤY TỒN KHO ==========
+// ========== API TỒN KHO ==========
 app.get('/api/ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -168,7 +179,7 @@ app.get('/api/ton-kho', async (req, res) => {
   }
 });
 
-// ========== API CẢNH BÁO TỒN KHO ==========
+// ========== API CẢNH BÁO ==========
 app.get('/api/canh-bao-ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -208,7 +219,6 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
-// ========== KHỞI ĐỘNG SERVER ==========
 app.listen(4000, () => {
   console.log('🚀 Server đang chạy tại http://localhost:4000');
 });
