@@ -32,7 +32,7 @@ app.use(express.json());
 
 // ✅ Gắn các route
 app.use('/api', authRoutes);
-app.use('/api', reportRoutes); // ✅ Gắn các API: báo cáo, danh sách nhập hàng GET, reset email
+app.use('/api', reportRoutes);
 
 // ✅ Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -58,7 +58,15 @@ app.post('/api/nhap-hang', async (req, res) => {
     }
 
     const newItem = new Inventory({
-      imei, sku, price_import, product_name, import_date, supplier, branch, note,
+      imei,
+      sku,
+      price_import,
+      product_name,
+      tenSanPham: product_name, // ✅ Bổ sung để hiển thị đúng Tên sản phẩm
+      import_date,
+      supplier,
+      branch,
+      note,
     });
 
     await newItem.save();
