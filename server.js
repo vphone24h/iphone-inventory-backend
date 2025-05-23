@@ -73,6 +73,48 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
+// ========== ✅ API SỬA HÀNG ĐÃ NHẬP ==========
+app.put('/api/nhap-hang/:id', async (req, res) => {
+  try {
+    const updatedItem = await Inventory.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: '❌ Không tìm thấy sản phẩm để cập nhật.' });
+    }
+
+    res.status(200).json({
+      message: '✅ Cập nhật thành công!',
+      item: updatedItem
+    });
+  } catch (error) {
+    console.error('❌ Lỗi khi cập nhật sản phẩm:', error.message);
+    res.status(500).json({ message: '❌ Lỗi server khi cập nhật', error: error.message });
+  }
+});
+
+// ========== ✅ API XOÁ HÀNG ĐÃ NHẬP ==========
+app.delete('/api/nhap-hang/:id', async (req, res) => {
+  try {
+    const deletedItem = await Inventory.findByIdAndDelete(req.params.id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ message: '❌ Không tìm thấy sản phẩm để xoá.' });
+    }
+
+    res.status(200).json({
+      message: '✅ Đã xoá thành công!',
+      item: deletedItem
+    });
+  } catch (error) {
+    console.error('❌ Lỗi khi xoá sản phẩm:', error.message);
+    res.status(500).json({ message: '❌ Lỗi server khi xoá sản phẩm', error: error.message });
+  }
+});
+
 // ========== API XUẤT HÀNG ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
