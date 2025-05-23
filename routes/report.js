@@ -24,8 +24,8 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
     const soldItems = await Inventory.find(query);
 
     const totalDevicesSold = soldItems.length;
-    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.price_sell || 0), 0);
-    const totalCost = soldItems.reduce((sum, item) => sum + (item.price_import || 0), 0);
+    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.giaBan || 0), 0); // Đổi tên cho đúng
+    const totalCost = soldItems.reduce((sum, item) => sum + (item.giaNhap || 0), 0);   // Đổi tên cho đúng
     const totalProfit = totalRevenue - totalCost;
 
     res.status(200).json({
