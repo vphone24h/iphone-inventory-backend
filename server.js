@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
+const reportRoutes = require('./routes/report'); // ✅ Thêm route báo cáo & nhập hàng GET
 
 const app = express();
 
@@ -12,7 +13,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5174',
   'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
-  'https://iphone-inventory-frontend.vercel.app' // frontend chính thức
+  'https://iphone-inventory-frontend.vercel.app'
 ];
 
 app.use(cors({
@@ -26,12 +27,12 @@ app.use(cors({
   credentials: true
 }));
 
-app.options('*', cors()); // ✅ cho phép preflight (OPTIONS)
-
+app.options('*', cors());
 app.use(express.json());
 
-// ✅ Gắn route xác thực admin (đăng ký, đăng nhập)
+// ✅ Gắn các route
 app.use('/api', authRoutes);
+app.use('/api', reportRoutes); // ✅ Gắn các API: báo cáo, danh sách nhập hàng GET, reset email
 
 // ✅ Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -46,7 +47,7 @@ app.get('/', (req, res) => {
   res.send('🎉 Backend đang chạy!');
 });
 
-// ================= API NHẬP HÀNG =================
+// ========== API NHẬP HÀNG ==========
 app.post('/api/nhap-hang', async (req, res) => {
   try {
     const { imei, sku, price_import, product_name, import_date, supplier, branch, note } = req.body;
@@ -72,7 +73,7 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
-// ================= API XUẤT HÀNG =================
+// ========== API XUẤT HÀNG ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
     const { imei, price_sell } = req.body;
@@ -87,12 +88,12 @@ app.post('/api/xuat-hang', async (req, res) => {
     }
 
     item.status = 'sold';
-    item.price_sell = price_sell;
+    item.giaBan = price_sell;
     item.sold_date = new Date();
 
     await item.save();
 
-    const profit = item.price_sell - item.price_import;
+    const profit = item.giaBan - item.price_import;
 
     res.status(200).json({ message: '✅ Xuất hàng thành công!', item, profit });
   } catch (error) {
@@ -101,7 +102,7 @@ app.post('/api/xuat-hang', async (req, res) => {
   }
 });
 
-// ================= API LẤY TỒN KHO =================
+// ========== API LẤY TỒN KHO ==========
 app.get('/api/ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -117,7 +118,7 @@ app.get('/api/ton-kho', async (req, res) => {
   }
 });
 
-// ================= API CẢNH BÁO TỒN KHO < 2 =================
+// ========== API CẢNH BÁO TỒN KHO ==========
 app.get('/api/canh-bao-ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -131,8 +132,6 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
           tenSanPham: item.tenSanPham || item.product_name || 'Không rõ',
           branch: item.branch || 'Mặc định',
           totalImport: 0,
-          totalSold: 0,
-          totalRemain: 0,
           imeis: [],
         };
       }
@@ -159,7 +158,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
-// ================= KHỞI ĐỘNG SERVER =================
+// ========== KHỞI ĐỘNG SERVER ==========
 app.listen(4000, () => {
   console.log('🚀 Server đang chạy tại http://localhost:4000');
 });

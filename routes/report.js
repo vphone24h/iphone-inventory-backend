@@ -24,8 +24,8 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
     const soldItems = await Inventory.find(query);
 
     const totalDevicesSold = soldItems.length;
-    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.giaBan || 0), 0); // Đổi tên cho đúng
-    const totalCost = soldItems.reduce((sum, item) => sum + (item.giaNhap || 0), 0);   // Đổi tên cho đúng
+    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.giaBan || 0), 0);
+    const totalCost = soldItems.reduce((sum, item) => sum + (item.giaNhap || 0), 0);
     const totalProfit = totalRevenue - totalCost;
 
     res.status(200).json({
@@ -38,6 +38,40 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
   } catch (err) {
     console.error('❌ Lỗi khi lấy báo cáo lợi nhuận:', err);
     res.status(500).json({ message: '❌ Lỗi server khi lấy báo cáo' });
+  }
+});
+
+// ==================== API: Lấy danh sách hàng đã nhập ====================
+router.get('/nhap-hang', async (req, res) => {
+  try {
+    const { search = "", page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {
+      status: 'in_stock',
+      $or: [
+        { imei: { $regex: search, $options: 'i' } },
+        { tenSanPham: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } }
+      ]
+    };
+
+    const total = await Inventory.countDocuments(query);
+    const items = await Inventory.find(query)
+      .sort({ import_date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      message: "✅ Danh sách hàng đã nhập",
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      items
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy danh sách nhập hàng:", error);
+    res.status(500).json({ message: "❌ Lỗi server", error: error.message });
   }
 });
 
