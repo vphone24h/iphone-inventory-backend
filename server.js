@@ -196,7 +196,17 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
 // ========== API XUẤT ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
-    const { imei, price_sell, customer_name, warranty, note, sku, product_name, sold_date } = req.body;
+    const {
+      imei,
+      price_sell,
+      customer_name,
+      warranty,
+      note,
+      sku,
+      product_name,
+      sold_date,
+      debt // <--- BỔ SUNG TRƯỜNG NÀY
+    } = req.body;
 
     const item = await Inventory.findOne({ imei });
     if (!item) {
@@ -215,6 +225,13 @@ app.post('/api/xuat-hang', async (req, res) => {
     item.note = note || '';
     item.sku = sku || item.sku;
     item.product_name = product_name || item.product_name;
+
+    // --- Bổ sung lưu trường công nợ
+    if (debt !== undefined && debt !== null && debt !== "") {
+      item.debt = Number(debt);
+    } else {
+      item.debt = 0; // Nếu không nhập sẽ là 0
+    }
 
     await item.save();
 
