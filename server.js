@@ -11,6 +11,9 @@ const reportRoutes = require('./routes/report');
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
 
+// ======= Thêm công nợ routes =======
+const congNoRoutes = require('./routes/congno'); // <-- BỔ SUNG DÒNG NÀY
+
 const app = express();
 
 const allowedOrigins = [
@@ -39,6 +42,9 @@ app.use('/api', reportRoutes);
 // ======= Dùng branch & category routes =========
 app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
+
+// ======= Dùng công nợ routes =========
+app.use('/api/cong-no', congNoRoutes); // <-- BỔ SUNG DÒNG NÀY
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
