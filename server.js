@@ -12,7 +12,7 @@ const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
 
 // ======= Thêm công nợ routes =======
-const congNoRoutes = require('./routes/congno'); // <-- BỔ SUNG DÒNG NÀY
+const congNoRoutes = require('./routes/congno');
 
 const app = express();
 
@@ -44,7 +44,7 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
 
 // ======= Dùng công nợ routes =========
-app.use('/api/cong-no', congNoRoutes); // <-- BỔ SUNG DÒNG NÀY
+app.use('/api/cong-no', congNoRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -217,8 +217,10 @@ app.post('/api/xuat-hang', async (req, res) => {
       return res.status(400).json({ message: '⚠️ Máy này đã được bán trước đó.' });
     }
 
+    // --- Lưu thông tin bán & công nợ ---
     item.status = 'sold';
     item.giaBan = price_sell;
+    item.price_sell = price_sell;
     item.sold_date = sold_date ? new Date(sold_date) : new Date();
     item.customer_name = customer_name || '';
     item.warranty = warranty || '';
@@ -226,11 +228,13 @@ app.post('/api/xuat-hang', async (req, res) => {
     item.sku = sku || item.sku;
     item.product_name = product_name || item.product_name;
 
-    // --- Bổ sung lưu trường công nợ
+    // --- Bổ sung logic công nợ và đã trả ---
     if (debt !== undefined && debt !== null && debt !== "") {
       item.debt = Number(debt);
+      item.da_tra = Number(item.price_sell) - Number(debt);
     } else {
-      item.debt = 0; // Nếu không nhập sẽ là 0
+      item.debt = 0;
+      item.da_tra = Number(item.price_sell);
     }
 
     await item.save();
@@ -351,9 +355,13 @@ app.delete('/api/xuat-hang/:id', async (req, res) => {
     // Cập nhật lại trạng thái máy về 'in_stock'
     item.status = 'in_stock';
     item.giaBan = undefined;
+    item.price_sell = undefined;
     item.sold_date = undefined;
     item.customer_name = undefined;
     item.warranty = undefined;
+    item.note = undefined;
+    item.debt = 0;
+    item.da_tra = 0;
     // Có thể xoá thêm các trường khác nếu muốn reset hoàn toàn đơn xuất
 
     await item.save();

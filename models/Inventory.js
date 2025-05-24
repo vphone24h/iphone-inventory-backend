@@ -22,8 +22,9 @@ const InventorySchema = new mongoose.Schema({
   branch: { type: String },                          // ✅ chi nhánh
   note: { type: String },                            // ✅ ghi chú
 
-  // ---- Thêm trường công nợ ở đây
-  debt: { type: Number, default: 0 },                // ✅ công nợ
+  // ---- Thêm trường công nợ và đã trả ở đây
+  debt: { type: Number, default: 0 },                // ✅ công nợ còn lại
+  da_tra: { type: Number, default: 0 },              // ✅ đã trả
 
   status: { type: String, enum: ["in_stock", "sold"], default: "in_stock" },
 }, {
