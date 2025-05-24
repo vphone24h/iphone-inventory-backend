@@ -39,11 +39,54 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
       totalRevenue,
       totalCost,
       totalProfit,
-      orders: soldItems // <--- Thêm dòng này để trả về danh sách đơn bán cho frontend!
+      orders: soldItems // <--- Có thể dùng cho mục đích thống kê khác
     });
   } catch (err) {
     console.error('❌ Lỗi khi lấy báo cáo lợi nhuận:', err);
     res.status(500).json({ message: '❌ Lỗi server khi lấy báo cáo' });
+  }
+});
+
+// ==================== API: Báo cáo chi tiết đơn hàng đã bán ====================
+router.get('/bao-cao-don-hang-chi-tiet', async (req, res) => {
+  try {
+    const { from, to, branch } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ message: "❌ Thiếu tham số ngày" });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setDate(toDate.getDate() + 1); // Lấy hết ngày "to"
+
+    const query = {
+      status: 'sold',
+      sold_date: { $gte: fromDate, $lt: toDate }
+    };
+    if (branch && branch !== "all") {
+      query.branch = branch;
+    }
+
+    const orders = await Inventory.find(query).sort({ sold_date: -1 });
+
+    // Chuẩn hóa field cho frontend
+    const result = orders.map(item => ({
+      _id: item._id,
+      sku: item.sku,
+      product_name: item.product_name || item.tenSanPham,
+      sold_date: item.sold_date,
+      customer_name: item.customer_name || item.khachHang || "Khách lẻ",
+      price_import: item.giaNhap || item.price_import || 0,
+      price_sell: item.giaBan || item.price_sell || 0
+    }));
+
+    res.status(200).json({
+      message: "✅ Danh sách đơn hàng chi tiết",
+      orders: result
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy chi tiết đơn hàng:", err);
+    res.status(500).json({ message: "❌ Lỗi server khi lấy chi tiết đơn hàng" });
   }
 });
 
