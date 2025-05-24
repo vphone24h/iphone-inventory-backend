@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const InventorySchema = new mongoose.Schema({
-  imei: { type: String, unique: true, sparse: true }, // không bắt buộc
+  imei: { type: String, unique: true, sparse: true },
 
   sku: { type: String, required: true },
   product_name: { type: String, required: true },
@@ -13,18 +13,18 @@ const InventorySchema = new mongoose.Schema({
   import_date: { type: Date, required: true },
   sold_date: { type: Date },
 
-  quantity: { type: Number, default: 1 },            // ✅ số lượng
-  category: { type: String, default: "" },           // ✅ thư mục
+  quantity: { type: Number, default: 1 },
+  category: { type: String, default: "" },
 
   supplier: { type: String },
   customer_name: { type: String },
+  customer_phone: { type: String },   // ✅ Thêm trường SĐT khách hàng
   warranty: { type: String },
-  branch: { type: String },                          // ✅ chi nhánh
-  note: { type: String },                            // ✅ ghi chú
+  branch: { type: String },
+  note: { type: String },
 
-  // ---- Thêm trường công nợ và đã trả ở đây
-  debt: { type: Number, default: 0 },                // ✅ công nợ còn lại
-  da_tra: { type: Number, default: 0 },              // ✅ đã trả
+  debt: { type: Number, default: 0 },       // Công nợ còn lại
+  da_tra: { type: Number, default: 0 },     // Đã trả
 
   status: { type: String, enum: ["in_stock", "sold"], default: "in_stock" },
 }, {

@@ -200,12 +200,13 @@ app.post('/api/xuat-hang', async (req, res) => {
       imei,
       price_sell,
       customer_name,
+      customer_phone, // <-- Thêm SĐT khách hàng
       warranty,
       note,
       sku,
       product_name,
       sold_date,
-      debt // <--- BỔ SUNG TRƯỜNG NÀY
+      debt
     } = req.body;
 
     const item = await Inventory.findOne({ imei });
@@ -223,6 +224,7 @@ app.post('/api/xuat-hang', async (req, res) => {
     item.price_sell = price_sell;
     item.sold_date = sold_date ? new Date(sold_date) : new Date();
     item.customer_name = customer_name || '';
+    item.customer_phone = customer_phone || ''; // <-- Lưu SĐT khách hàng
     item.warranty = warranty || '';
     item.note = note || '';
     item.sku = sku || item.sku;
@@ -358,6 +360,7 @@ app.delete('/api/xuat-hang/:id', async (req, res) => {
     item.price_sell = undefined;
     item.sold_date = undefined;
     item.customer_name = undefined;
+    item.customer_phone = undefined;
     item.warranty = undefined;
     item.note = undefined;
     item.debt = 0;
