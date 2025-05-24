@@ -24,8 +24,13 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
     const soldItems = await Inventory.find(query);
 
     const totalDevicesSold = soldItems.length;
-    const totalRevenue = soldItems.reduce((sum, item) => sum + (item.giaBan || 0), 0);
-    const totalCost = soldItems.reduce((sum, item) => sum + (item.giaNhap || 0), 0);
+    // Hỗ trợ cả 2 kiểu trường giá (giaBan hoặc price_sell, giaNhap hoặc price_import)
+    const totalRevenue = soldItems.reduce(
+      (sum, item) => sum + (item.giaBan || item.price_sell || 0), 0
+    );
+    const totalCost = soldItems.reduce(
+      (sum, item) => sum + (item.giaNhap || item.price_import || 0), 0
+    );
     const totalProfit = totalRevenue - totalCost;
 
     res.status(200).json({
@@ -33,7 +38,8 @@ router.get('/bao-cao-loi-nhuan', async (req, res) => {
       totalDevicesSold,
       totalRevenue,
       totalCost,
-      totalProfit
+      totalProfit,
+      orders: soldItems // <--- Thêm dòng này để trả về danh sách đơn bán cho frontend!
     });
   } catch (err) {
     console.error('❌ Lỗi khi lấy báo cáo lợi nhuận:', err);
