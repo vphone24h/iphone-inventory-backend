@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Inventory = require('../models/Inventory');
 
-// 1. Lấy danh sách khách hàng còn công nợ (Tổng hợp theo customer_name + phone)
+// 1. Lấy danh sách khách hàng còn công nợ (Tổng hợp theo customer_name + customer_phone)
 router.get('/cong-no-list', async (req, res) => {
   try {
     // Lấy các đơn đã xuất, còn nợ, có tên khách
@@ -29,12 +29,12 @@ router.get('/cong-no-list', async (req, res) => {
       grouped[key].total_debt += item.debt || 0;
       grouped[key].total_paid += item.da_tra || 0;
 
-      // Gom lịch sử trả nợ/cộng nợ (nếu muốn lấy lịch sử từng đơn thì lấy mảng)
+      // Gom lịch sử trả nợ/cộng nợ
       if (item.debt_history && Array.isArray(item.debt_history)) {
         grouped[key].debt_history = grouped[key].debt_history.concat(item.debt_history);
       }
 
-      // Thêm sản phẩm chi tiết
+      // Thêm sản phẩm chi tiết (nếu cần show chi tiết)
       grouped[key].product_list.push({
         imei: item.imei,
         product_name: item.product_name,
@@ -45,7 +45,7 @@ router.get('/cong-no-list', async (req, res) => {
       });
     });
 
-    // Sắp xếp lịch sử mới nhất lên trên (tuỳ backend bạn có muốn merge lại ko)
+    // Sắp xếp lịch sử mới nhất lên trên
     Object.values(grouped).forEach(group => {
       group.debt_history = group.debt_history.sort((a, b) =>
         new Date(b.date) - new Date(a.date)
@@ -58,7 +58,7 @@ router.get('/cong-no-list', async (req, res) => {
   }
 });
 
-// 2. Lấy danh sách đơn còn nợ của 1 khách hàng
+// 2. Lấy danh sách đơn còn nợ của 1 khách hàng (theo tên + sđt)
 router.get('/cong-no-orders', async (req, res) => {
   const { customer_name, customer_phone } = req.query;
   if (!customer_name) return res.status(400).json({ message: "Thiếu tên khách hàng" });
@@ -76,7 +76,7 @@ router.get('/cong-no-orders', async (req, res) => {
   }
 });
 
-// 3. Trừ nợ tổng cho từng khách (cho phép trừ tổng nợ)
+// 3. Trừ nợ tổng cho từng khách (theo tên + sđt, cho phép trừ tổng nhiều đơn)
 router.put('/cong-no-pay-customer', async (req, res) => {
   const { customer_name, customer_phone, amount } = req.body;
   if (!customer_name || !amount || isNaN(amount)) return res.status(400).json({ message: "Thiếu thông tin hoặc số tiền trả" });
@@ -130,12 +130,12 @@ router.put('/cong-no-pay-customer', async (req, res) => {
   }
 });
 
-// 4. Cộng nợ tổng cho khách
+// 4. Cộng nợ tổng cho khách (theo tên + sđt, cộng vào đơn mới nhất)
 router.put('/cong-no-add-customer', async (req, res) => {
   const { customer_name, customer_phone, amount } = req.body;
   if (!customer_name || !amount || isNaN(amount)) return res.status(400).json({ message: "Thiếu thông tin hoặc số tiền cộng nợ" });
   try {
-    // Chỉ cộng nợ vào đơn còn nợ nhiều nhất, hoặc đơn mới nhất
+    // Cộng nợ vào đơn còn nợ nhiều nhất, hoặc đơn mới nhất
     const query = { customer_name, status: "sold" };
     if (customer_phone) query.customer_phone = customer_phone;
     const order = await Inventory.findOne(query).sort({ sold_date: -1 });
@@ -174,7 +174,33 @@ router.put('/cong-no-add-customer', async (req, res) => {
   }
 });
 
-// 5. Trả nợ/cộng nợ từng đơn (nếu frontend vẫn dùng)
-// ... Giữ nguyên API cũ nếu cần
+// 5. Trả nợ/cộng nợ từng đơn (nếu frontend vẫn dùng nút trừ/cộng từng đơn thì giữ lại API này)
+router.put('/cong-no-pay/:id', async (req, res) => {
+  const { amount } = req.body;
+  if (!amount || isNaN(amount)) return res.status(400).json({ message: "Thiếu số tiền trả" });
+  try {
+    const order = await Inventory.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn nợ" });
+
+    const tra = Number(amount);
+    if (tra <= 0) return res.status(400).json({ message: "Số tiền trả phải > 0" });
+    if ((order.debt || 0) <= 0) return res.status(400).json({ message: "Đơn này không còn công nợ" });
+
+    order.da_tra = (order.da_tra || 0) + tra;
+    order.debt = Math.max((order.debt || 0) - tra, 0);
+
+    if (!order.debt_history) order.debt_history = [];
+    order.debt_history.push({
+      type: "pay",
+      amount: tra,
+      date: new Date()
+    });
+
+    await order.save();
+    res.json({ message: "Đã cập nhật công nợ!", order });
+  } catch (err) {
+    res.status(500).json({ message: '❌ Lỗi server khi cập nhật nợ', error: err.message });
+  }
+});
 
 module.exports = router;
