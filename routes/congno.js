@@ -34,7 +34,7 @@ router.get('/cong-no-list', async (req, res) => {
         grouped[key].debt_history = grouped[key].debt_history.concat(item.debt_history);
       }
 
-      // Thêm sản phẩm chi tiết (nếu cần show chi tiết)
+      // Thêm sản phẩm chi tiết
       grouped[key].product_list.push({
         imei: item.imei,
         product_name: item.product_name,
