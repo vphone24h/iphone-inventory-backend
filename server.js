@@ -67,33 +67,78 @@ app.post('/api/nhap-hang', async (req, res) => {
       category
     } = req.body;
 
+    // --- Nếu là máy lẻ (có IMEI): nhập từng máy ---
     if (imei) {
       const exists = await Inventory.findOne({ imei });
       if (exists) {
         return res.status(400).json({ message: '❌ IMEI này đã tồn tại trong kho.' });
       }
+      const newItem = new Inventory({
+        imei,
+        sku,
+        price_import,
+        product_name,
+        tenSanPham: product_name,
+        import_date,
+        supplier,
+        branch,
+        note,
+        quantity: 1,
+        category
+      });
+      await newItem.save();
+      return res.status(201).json({
+        message: '✅ Nhập hàng thành công!',
+        item: newItem
+      });
     }
 
-    const newItem = new Inventory({
-      imei,
-      sku,
-      price_import,
-      product_name,
-      tenSanPham: product_name,
-      import_date,
-      supplier,
-      branch,
-      note,
-      quantity,
-      category
+    // --- Nếu là phụ kiện hoặc nhập theo số lượng ---
+    if (!sku || !product_name) {
+      return res.status(400).json({ message: '❌ Thiếu SKU hoặc tên sản phẩm.' });
+    }
+
+    // Kiểm tra trùng phụ kiện: không IMEI, cùng SKU, branch, product_name, price_import, category
+    let existItem = await Inventory.findOne({
+      $or: [{ imei: null }, { imei: "" }, { imei: undefined }],
+      sku: sku,
+      branch: branch,
+      product_name: product_name,
+      price_import: price_import,
+      category: category,
     });
 
-    await newItem.save();
-
-    res.status(201).json({
-      message: '✅ Nhập hàng thành công!',
-      item: newItem
-    });
+    if (existItem) {
+      // Cộng dồn số lượng
+      existItem.quantity = (existItem.quantity || 1) + Number(quantity || 1);
+      existItem.import_date = import_date || existItem.import_date;
+      existItem.supplier = supplier || existItem.supplier;
+      existItem.note = note || existItem.note;
+      await existItem.save();
+      return res.status(200).json({
+        message: '✅ Đã cộng dồn số lượng phụ kiện!',
+        item: existItem
+      });
+    } else {
+      // Chưa có thì tạo mới
+      const newItem = new Inventory({
+        sku,
+        price_import,
+        product_name,
+        tenSanPham: product_name,
+        import_date,
+        supplier,
+        branch,
+        note,
+        quantity: Number(quantity || 1),
+        category
+      });
+      await newItem.save();
+      return res.status(201).json({
+        message: '✅ Nhập phụ kiện thành công!',
+        item: newItem
+      });
+    }
   } catch (error) {
     console.error('❌ Lỗi khi nhập hàng:', error.message);
     res.status(500).json({ message: '❌ Lỗi server khi nhập hàng', error: error.message });
