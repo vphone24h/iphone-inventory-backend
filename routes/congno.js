@@ -100,7 +100,7 @@ router.put('/cong-no-pay-customer', async (req, res) => {
         type: "pay",
         amount: toPay,
         date: new Date(),
-        note: note || ""  // Ghi chú
+        note: note || ""
       });
 
       await order.save();
@@ -145,7 +145,7 @@ router.put('/cong-no-add-customer', async (req, res) => {
       type: "add",
       amount: Number(amount),
       date: new Date(),
-      note: note || ""  // Ghi chú
+      note: note || ""
     });
 
     await order.save();
@@ -191,7 +191,7 @@ router.put('/cong-no-pay/:id', async (req, res) => {
       type: "pay",
       amount: tra,
       date: new Date(),
-      note: note || ""  // Ghi chú
+      note: note || ""
     });
 
     await order.save();
