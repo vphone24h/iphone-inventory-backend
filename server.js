@@ -10,7 +10,6 @@ const reportRoutes = require('./routes/report');
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
 const congNoRoutes = require('./routes/congno');
-// const adminRoutes = require('./routes/admin');       // <-- Bỏ import admin routes
 
 const app = express();
 
