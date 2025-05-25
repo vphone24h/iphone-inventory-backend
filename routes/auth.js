@@ -5,7 +5,7 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// ✅ Đăng ký tài khoản admin
+// ✅ Đăng ký tài khoản admin hoặc user (mặc định role = 'user', approved = false)
 router.post('/admin-register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -20,9 +20,19 @@ router.post('/admin-register', async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashed });
 
-    const token = jwt.sign({ userId: user._id }, 'vphone_secret_key', { expiresIn: '7d' });
+    // Tạo user mới với role mặc định là 'user' và approved false (phải được admin duyệt)
+    const user = await User.create({ email, password: hashed, role: 'user', approved: false });
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET || 'vphone_secret_key',
+      { expiresIn: '7d' }
+    );
 
     res.status(201).json({ message: '✅ Tạo tài khoản thành công', token });
   } catch (err) {
@@ -30,7 +40,7 @@ router.post('/admin-register', async (req, res) => {
   }
 });
 
-// ✅ Đăng nhập admin
+// ✅ Đăng nhập admin hoặc user
 router.post('/admin-login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -45,7 +55,20 @@ router.post('/admin-login', async (req, res) => {
       return res.status(400).json({ message: '❌ Mật khẩu sai' });
     }
 
-    const token = jwt.sign({ userId: user._id }, 'vphone_secret_key', { expiresIn: '7d' });
+    // Kiểm tra tài khoản đã được duyệt chưa
+    if (!user.approved) {
+      return res.status(403).json({ message: '⚠️ Tài khoản chưa được duyệt' });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET || 'vphone_secret_key',
+      { expiresIn: '7d' }
+    );
 
     res.status(200).json({ message: '✅ Đăng nhập thành công', token });
   } catch (err) {

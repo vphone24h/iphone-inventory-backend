@@ -12,7 +12,10 @@ exports.verifyToken = (req, res, next) => {
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: "Token không hợp lệ!" });
+    if (err) {
+      console.error("JWT verify error:", err);
+      return res.status(403).json({ message: "Token không hợp lệ!" });
+    }
     req.user = user; // user chứa { id, email, role }
     next();
   });
@@ -28,6 +31,7 @@ exports.requireAdmin = async (req, res, next) => {
     }
     next();
   } catch (err) {
+    console.error("Error in requireAdmin middleware:", err);
     return res.status(500).json({ message: "Lỗi xác thực admin!" });
   }
 };
