@@ -6,13 +6,13 @@ require('dotenv').config();
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
 const reportRoutes = require('./routes/report');
-
 // ======= Thêm branch & category routes =======
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
-
 // ======= Thêm công nợ routes =======
 const congNoRoutes = require('./routes/congno');
+// ======= Thêm admin routes =======
+const adminRoutes = require('./routes/admin');   // <-- ĐÃ CHÈN
 
 const app = express();
 
@@ -45,6 +45,9 @@ app.use('/api/categories', categoryRoutes);
 
 // ======= Dùng công nợ routes =========
 app.use('/api/cong-no', congNoRoutes);
+
+// ======= Dùng admin routes =========
+app.use('/api', adminRoutes);     // <-- ĐÃ CHÈN
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
