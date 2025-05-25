@@ -11,7 +11,7 @@ exports.verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "Bạn chưa đăng nhập!" });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET || "vphone_secret_key", (err, user) => {
     if (err) {
       console.error("JWT verify error:", err);
       return res.status(403).json({ message: "Token không hợp lệ!" });
