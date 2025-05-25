@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// Danh sách origin frontend được phép truy cập API backend
 const allowedOrigins = [
   'http://localhost:5174',
   'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
@@ -22,13 +23,15 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('❌ CORS bị chặn: ' + origin));
+    // Cho phép các request không có origin (Postman, mobile apps)
+    if (!origin) return callback(null, true);
+    if (!allowedOrigins.includes(origin)) {
+      const msg = '❌ CORS bị chặn: ' + origin;
+      return callback(new Error(msg), false);
     }
+    return callback(null, true);
   },
-  credentials: true,
+  credentials: true, // Cho phép gửi cookie, header authorization
 }));
 
 app.options('*', cors());
