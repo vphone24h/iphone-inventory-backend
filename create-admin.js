@@ -1,10 +1,12 @@
+require('dotenv').config(); // THÊM DÒNG NÀY Ở ĐẦU FILE!
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('./models/User');
 
-// ==== Sửa tại đây: email & password admin ====
+// Thay thông tin email và mật khẩu bên dưới theo ý bạn!
 const ADMIN_EMAIL = "vphone24h1@gmail.com";
-const ADMIN_PASSWORD = "0985630451vU"; // Mật khẩu mạnh
+const ADMIN_PASSWORD = "0985630451vU"; // Đổi sang mật khẩu mạnh!
 
 async function createAdmin() {
   await mongoose.connect(process.env.MONGODB_URI, {
