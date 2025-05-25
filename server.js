@@ -5,12 +5,12 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');          // <-- Bổ sung import user routes
+const userRoutes = require('./routes/user');          // <-- Giữ import user routes
 const reportRoutes = require('./routes/report');
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
 const congNoRoutes = require('./routes/congno');
-const adminRoutes = require('./routes/admin');
+// const adminRoutes = require('./routes/admin');       // <-- Bỏ import admin routes
 
 const app = express();
 
@@ -39,13 +39,13 @@ app.use(express.json());
 
 // ===== Đăng ký các route API =====
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);                     // <-- Đăng ký user routes tại đây
+app.use('/api/user', userRoutes);                     // <-- Giữ user routes
 app.use('/api/report', reportRoutes);
 
 app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cong-no', congNoRoutes);
-app.use('/api/admin', adminRoutes);
+// app.use('/api/admin', adminRoutes);                 // <-- Bỏ route admin
 
 // ===== API nhập hàng =====
 app.post('/api/nhap-hang', async (req, res) => {
