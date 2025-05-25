@@ -13,14 +13,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    approved: {
+    approved: {                    // Thêm trường approved để xác định đã duyệt hay chưa
       type: Boolean,
-      default: false,      // Mặc định chưa duyệt khi đăng ký
+      default: false,              // Mặc định chưa được duyệt
     },
     role: {
       type: String,
       enum: ["user", "admin"],
-      default: "user",     // Mặc định là user thường
+      default: "user",
     },
   },
   {

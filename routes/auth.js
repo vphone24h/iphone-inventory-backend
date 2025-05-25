@@ -2,11 +2,13 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { verifyToken, requireAdmin } = require('../middleware/auth'); // Bổ sung import middleware
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ✅ Đăng ký tài khoản admin hoặc user (mặc định role = 'user', approved = false)
+// ===== Đăng ký tài khoản user mới =====
+// Mặc định role = 'user', approved = false
+// Không trả token ngay mà báo chờ admin phê duyệt
 router.post('/admin-register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -22,26 +24,22 @@ router.post('/admin-register', async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    // Tạo user mới với role mặc định là 'user' và approved false (phải được admin duyệt)
-    const user = await User.create({ email, password: hashed, role: 'user', approved: false });
+    await User.create({
+      email,
+      password: hashed,
+      role: 'user',
+      approved: false,    // Chờ admin duyệt
+    });
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-        role: user.role
-      },
-      process.env.JWT_SECRET || 'vphone_secret_key',
-      { expiresIn: '7d' }
-    );
-
-    res.status(201).json({ message: '✅ Tạo tài khoản thành công', token });
+    res.status(201).json({
+      message: '✅ Tạo tài khoản thành công, vui lòng chờ admin phê duyệt',
+    });
   } catch (err) {
     res.status(500).json({ message: '❌ Lỗi server', error: err.message });
   }
 });
 
-// ✅ Đăng nhập admin hoặc user
+// ===== Đăng nhập admin hoặc user =====
 router.post('/admin-login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -56,16 +54,16 @@ router.post('/admin-login', async (req, res) => {
       return res.status(400).json({ message: '❌ Mật khẩu sai' });
     }
 
-    // Kiểm tra tài khoản đã được duyệt chưa
+    // Kiểm tra user đã được duyệt chưa
     if (!user.approved) {
-      return res.status(403).json({ message: '⚠️ Tài khoản chưa được duyệt' });
+      return res.status(403).json({ message: '⚠️ Tài khoản chưa được admin phê duyệt' });
     }
 
     const token = jwt.sign(
       {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_SECRET || 'vphone_secret_key',
       { expiresIn: '7d' }
@@ -77,19 +75,19 @@ router.post('/admin-login', async (req, res) => {
   }
 });
 
-// ===== Bổ sung API lấy danh sách user chưa duyệt =====
-// Chỉ admin mới được gọi API này
+// ===== API lấy danh sách user chưa duyệt =====
+// Chỉ admin mới được phép gọi
 router.get('/pending-users', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const pendingUsers = await User.find({ approved: false });
+    const pendingUsers = await User.find({ approved: false, role: 'user' });
     res.status(200).json(pendingUsers);
   } catch (err) {
     res.status(500).json({ message: '❌ Lỗi server', error: err.message });
   }
 });
 
-// ===== Bổ sung API duyệt user =====
-// Chỉ admin mới được gọi API này
+// ===== API duyệt user =====
+// Chỉ admin mới được phép gọi
 router.post('/approve-user/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
