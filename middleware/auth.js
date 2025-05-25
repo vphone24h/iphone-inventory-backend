@@ -4,11 +4,17 @@ const User = require('../models/User');
 exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Bạn chưa đăng nhập!' });
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Token không hợp lệ!' });
-    req.user = user;
+  if (!token) {
+    return res.status(401).json({ message: 'Bạn chưa đăng nhập!' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'vphone_secret_key', (err, user) => {
+    if (err) {
+      console.error('JWT verify error:', err);
+      return res.status(403).json({ message: 'Token không hợp lệ!' });
+    }
+    req.user = user; // user chứa { id, email, role }
     next();
   });
 };
@@ -20,7 +26,8 @@ exports.requireAdmin = async (req, res, next) => {
       return res.status(403).json({ message: 'Chỉ admin mới được phép truy cập' });
     }
     next();
-  } catch {
+  } catch (err) {
+    console.error('Error in requireAdmin middleware:', err);
     res.status(500).json({ message: 'Lỗi server' });
   }
 };
