@@ -76,4 +76,25 @@ router.post('/admin-login', async (req, res) => {
   }
 });
 
+// ===== Bổ sung API lấy danh sách user chưa duyệt =====
+router.get('/pending-users', async (req, res) => {
+  try {
+    const pendingUsers = await User.find({ approved: false });
+    res.status(200).json(pendingUsers);
+  } catch (err) {
+    res.status(500).json({ message: '❌ Lỗi server', error: err.message });
+  }
+});
+
+// ===== Bổ sung API duyệt user =====
+router.post('/approve-user/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await User.findByIdAndUpdate(userId, { approved: true });
+    res.status(200).json({ message: '✅ Đã duyệt user' });
+  } catch (err) {
+    res.status(500).json({ message: '❌ Lỗi server', error: err.message });
+  }
+});
+
 module.exports = router;
