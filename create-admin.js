@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('./models/User');
 
-// Thay thông tin email và mật khẩu bên dưới theo ý bạn!
-const ADMIN_EMAIL = "admin@vphone24h.com";
-const ADMIN_PASSWORD = "123456"; // Đổi sang mật khẩu mạnh!
+// ==== Sửa tại đây: email & password admin ====
+const ADMIN_EMAIL = "vphone24h1@gmail.com";
+const ADMIN_PASSWORD = "0985630451vU"; // Mật khẩu mạnh
 
 async function createAdmin() {
-  await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/iphone-inventory", {
+  await mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
