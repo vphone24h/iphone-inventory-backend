@@ -5,54 +5,46 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');       // <-- Bổ sung import user routes
+const userRoutes = require('./routes/user');
 const reportRoutes = require('./routes/report');
-// ======= Thêm branch & category routes =======
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
-// ======= Thêm công nợ routes =======
 const congNoRoutes = require('./routes/congno');
-// ======= Thêm admin routes =======
-const adminRoutes = require('./routes/admin');   // <-- Đã có sẵn
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
 const allowedOrigins = [
   'http://localhost:5174',
   'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
-  'https://iphone-inventory-frontend.vercel.app'
+  'https://iphone-inventory-frontend.vercel.app',
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('❌ CORS bị chặn: ' + origin));
     }
   },
-  credentials: true
+  credentials: true,
 }));
 
 app.options('*', cors());
 app.use(express.json());
 
-// Đăng ký các route API
-app.use('/api', authRoutes);
-app.use('/api', userRoutes);            // <-- Đăng ký user routes tại đây
-app.use('/api', reportRoutes);
+// ===== Đăng ký các route API =====
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/report', reportRoutes);
 
-// ======= Dùng branch & category routes =========
 app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
-
-// ======= Dùng công nợ routes =========
 app.use('/api/cong-no', congNoRoutes);
+app.use('/api/admin', adminRoutes);
 
-// ======= Dùng admin routes =========
-app.use('/api', adminRoutes);
-
-// ========== API NHẬP HÀNG ==========
+// ===== API nhập hàng =====
 app.post('/api/nhap-hang', async (req, res) => {
   try {
     const {
@@ -65,7 +57,7 @@ app.post('/api/nhap-hang', async (req, res) => {
       branch,
       note,
       quantity,
-      category
+      category,
     } = req.body;
 
     if (imei) {
@@ -84,12 +76,12 @@ app.post('/api/nhap-hang', async (req, res) => {
         branch,
         note,
         quantity: 1,
-        category
+        category,
       });
       await newItem.save();
       return res.status(201).json({
         message: '✅ Nhập hàng thành công!',
-        item: newItem
+        item: newItem,
       });
     }
 
@@ -114,7 +106,7 @@ app.post('/api/nhap-hang', async (req, res) => {
       await existItem.save();
       return res.status(200).json({
         message: '✅ Đã cộng dồn số lượng phụ kiện!',
-        item: existItem
+        item: existItem,
       });
     } else {
       const newItem = new Inventory({
@@ -127,12 +119,12 @@ app.post('/api/nhap-hang', async (req, res) => {
         branch,
         note,
         quantity: Number(quantity || 1),
-        category
+        category,
       });
       await newItem.save();
       return res.status(201).json({
         message: '✅ Nhập phụ kiện thành công!',
-        item: newItem
+        item: newItem,
       });
     }
   } catch (error) {
@@ -141,13 +133,13 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
-// ========== API SỬA HÀNG ==========
+// ===== API sửa hàng =====
 app.put('/api/nhap-hang/:id', async (req, res) => {
   try {
     const updatedItem = await Inventory.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true },
     );
 
     if (!updatedItem) {
@@ -156,7 +148,7 @@ app.put('/api/nhap-hang/:id', async (req, res) => {
 
     res.status(200).json({
       message: '✅ Cập nhật thành công!',
-      item: updatedItem
+      item: updatedItem,
     });
   } catch (error) {
     console.error('❌ Lỗi khi cập nhật sản phẩm:', error.message);
@@ -164,7 +156,7 @@ app.put('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ========== API XOÁ ==========
+// ===== API xoá hàng =====
 app.delete('/api/nhap-hang/:id', async (req, res) => {
   try {
     const deletedItem = await Inventory.findByIdAndDelete(req.params.id);
@@ -175,7 +167,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
 
     res.status(200).json({
       message: '✅ Đã xoá thành công!',
-      item: deletedItem
+      item: deletedItem,
     });
   } catch (error) {
     console.error('❌ Lỗi khi xoá sản phẩm:', error.message);
@@ -183,7 +175,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ========== API XUẤT ==========
+// ===== API xuất hàng =====
 app.post('/api/xuat-hang', async (req, res) => {
   try {
     const {
@@ -196,7 +188,7 @@ app.post('/api/xuat-hang', async (req, res) => {
       sku,
       product_name,
       sold_date,
-      debt
+      debt,
     } = req.body;
 
     const item = await Inventory.findOne({ imei });
@@ -238,7 +230,7 @@ app.post('/api/xuat-hang', async (req, res) => {
   }
 });
 
-// ========== API TỒN KHO ==========
+// ===== API tồn kho =====
 app.get('/api/ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -246,7 +238,7 @@ app.get('/api/ton-kho', async (req, res) => {
     res.status(200).json({
       message: '✅ Danh sách máy còn tồn kho',
       total: items.length,
-      items
+      items,
     });
   } catch (error) {
     console.error('❌ Lỗi khi lấy tồn kho:', error.message);
@@ -254,7 +246,7 @@ app.get('/api/ton-kho', async (req, res) => {
   }
 });
 
-// ========== API CẢNH BÁO ==========
+// ===== API cảnh báo tồn kho =====
 app.get('/api/canh-bao-ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -286,7 +278,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
     res.status(200).json({
       message: '✅ Danh sách hàng tồn kho thấp (dưới 2)',
       total: result.length,
-      items: result
+      items: result,
     });
   } catch (error) {
     console.error('❌ Lỗi khi lấy danh sách cảnh báo tồn kho:', error.message);
@@ -294,7 +286,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
-// ========== BỔ SUNG 3 API QUẢN LÝ XUẤT HÀNG ==========
+// ===== API danh sách xuất hàng =====
 app.get('/api/xuat-hang-list', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'sold' }).sort({ sold_date: -1 });
