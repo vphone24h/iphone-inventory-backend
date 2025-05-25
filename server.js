@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');
+const userRoutes = require('./routes/user');          // <-- Bổ sung import user routes
 const reportRoutes = require('./routes/report');
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
@@ -36,7 +36,7 @@ app.use(express.json());
 
 // ===== Đăng ký các route API =====
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/user', userRoutes);                     // <-- Đăng ký user routes tại đây
 app.use('/api/report', reportRoutes);
 
 app.use('/api/branches', branchRoutes);
@@ -338,8 +338,6 @@ app.delete('/api/xuat-hang/:id', async (req, res) => {
     res.status(500).json({ message: '❌ Lỗi khi xoá đơn xuất', error: error.message });
   }
 });
- // <-- Bổ sung import user routes
-// <-- Bổ sung đăng ký user routes
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
