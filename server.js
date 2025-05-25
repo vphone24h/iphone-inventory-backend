@@ -5,48 +5,54 @@ require('dotenv').config();
 
 const Inventory = require('./models/Inventory');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');          // <-- Giữ import user routes
+const userRoutes = require('./routes/user');       // <-- Bổ sung import user routes
 const reportRoutes = require('./routes/report');
+// ======= Thêm branch & category routes =======
 const branchRoutes = require('./routes/branch');
 const categoryRoutes = require('./routes/category');
+// ======= Thêm công nợ routes =======
 const congNoRoutes = require('./routes/congno');
+// ======= Thêm admin routes =======
+const adminRoutes = require('./routes/admin');   // <-- Đã có sẵn
 
 const app = express();
 
-// Danh sách origin frontend được phép truy cập API backend
 const allowedOrigins = [
   'http://localhost:5174',
   'https://vphone-pw2zoudi6-vphone24hs-projects.vercel.app',
-  'https://iphone-inventory-frontend.vercel.app',
+  'https://iphone-inventory-frontend.vercel.app'
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // Cho phép các request không có origin (Postman, mobile apps)
-    if (!origin) return callback(null, true);
-    if (!allowedOrigins.includes(origin)) {
-      const msg = '❌ CORS bị chặn: ' + origin;
-      return callback(new Error(msg), false);
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('❌ CORS bị chặn: ' + origin));
     }
-    return callback(null, true);
   },
-  credentials: true, // Cho phép gửi cookie, header authorization
+  credentials: true
 }));
 
 app.options('*', cors());
 app.use(express.json());
 
-// ===== Đăng ký các route API =====
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);                     // <-- Giữ user routes
-app.use('/api/report', reportRoutes);
+// Đăng ký các route API
+app.use('/api', authRoutes);
+app.use('/api', userRoutes);            // <-- Đăng ký user routes tại đây
+app.use('/api', reportRoutes);
 
+// ======= Dùng branch & category routes =========
 app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/cong-no', congNoRoutes);
-// app.use('/api/admin', adminRoutes);                 // <-- Bỏ route admin
 
-// ===== API nhập hàng =====
+// ======= Dùng công nợ routes =========
+app.use('/api/cong-no', congNoRoutes);
+
+// ======= Dùng admin routes =========
+app.use('/api', adminRoutes);
+
+// ========== API NHẬP HÀNG ==========
 app.post('/api/nhap-hang', async (req, res) => {
   try {
     const {
@@ -59,9 +65,10 @@ app.post('/api/nhap-hang', async (req, res) => {
       branch,
       note,
       quantity,
-      category,
+      category
     } = req.body;
 
+    // --- Nếu là máy lẻ (có IMEI): nhập từng máy ---
     if (imei) {
       const exists = await Inventory.findOne({ imei });
       if (exists) {
@@ -78,19 +85,21 @@ app.post('/api/nhap-hang', async (req, res) => {
         branch,
         note,
         quantity: 1,
-        category,
+        category
       });
       await newItem.save();
       return res.status(201).json({
         message: '✅ Nhập hàng thành công!',
-        item: newItem,
+        item: newItem
       });
     }
 
+    // --- Nếu là phụ kiện hoặc nhập theo số lượng ---
     if (!sku || !product_name) {
       return res.status(400).json({ message: '❌ Thiếu SKU hoặc tên sản phẩm.' });
     }
 
+    // Kiểm tra trùng phụ kiện: không IMEI, cùng SKU, branch, product_name, price_import, category
     let existItem = await Inventory.findOne({
       $or: [{ imei: null }, { imei: "" }, { imei: undefined }],
       sku: sku,
@@ -101,6 +110,7 @@ app.post('/api/nhap-hang', async (req, res) => {
     });
 
     if (existItem) {
+      // Cộng dồn số lượng
       existItem.quantity = (existItem.quantity || 1) + Number(quantity || 1);
       existItem.import_date = import_date || existItem.import_date;
       existItem.supplier = supplier || existItem.supplier;
@@ -108,9 +118,10 @@ app.post('/api/nhap-hang', async (req, res) => {
       await existItem.save();
       return res.status(200).json({
         message: '✅ Đã cộng dồn số lượng phụ kiện!',
-        item: existItem,
+        item: existItem
       });
     } else {
+      // Chưa có thì tạo mới
       const newItem = new Inventory({
         sku,
         price_import,
@@ -121,12 +132,12 @@ app.post('/api/nhap-hang', async (req, res) => {
         branch,
         note,
         quantity: Number(quantity || 1),
-        category,
+        category
       });
       await newItem.save();
       return res.status(201).json({
         message: '✅ Nhập phụ kiện thành công!',
-        item: newItem,
+        item: newItem
       });
     }
   } catch (error) {
@@ -135,13 +146,13 @@ app.post('/api/nhap-hang', async (req, res) => {
   }
 });
 
-// ===== API sửa hàng =====
+// ========== API SỬA HÀNG ==========
 app.put('/api/nhap-hang/:id', async (req, res) => {
   try {
     const updatedItem = await Inventory.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { new: true }
     );
 
     if (!updatedItem) {
@@ -150,7 +161,7 @@ app.put('/api/nhap-hang/:id', async (req, res) => {
 
     res.status(200).json({
       message: '✅ Cập nhật thành công!',
-      item: updatedItem,
+      item: updatedItem
     });
   } catch (error) {
     console.error('❌ Lỗi khi cập nhật sản phẩm:', error.message);
@@ -158,7 +169,7 @@ app.put('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ===== API xoá hàng =====
+// ========== API XOÁ ==========
 app.delete('/api/nhap-hang/:id', async (req, res) => {
   try {
     const deletedItem = await Inventory.findByIdAndDelete(req.params.id);
@@ -169,7 +180,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
 
     res.status(200).json({
       message: '✅ Đã xoá thành công!',
-      item: deletedItem,
+      item: deletedItem
     });
   } catch (error) {
     console.error('❌ Lỗi khi xoá sản phẩm:', error.message);
@@ -177,7 +188,7 @@ app.delete('/api/nhap-hang/:id', async (req, res) => {
   }
 });
 
-// ===== API xuất hàng =====
+// ========== API XUẤT ==========
 app.post('/api/xuat-hang', async (req, res) => {
   try {
     const {
@@ -190,7 +201,7 @@ app.post('/api/xuat-hang', async (req, res) => {
       sku,
       product_name,
       sold_date,
-      debt,
+      debt
     } = req.body;
 
     const item = await Inventory.findOne({ imei });
@@ -232,7 +243,7 @@ app.post('/api/xuat-hang', async (req, res) => {
   }
 });
 
-// ===== API tồn kho =====
+// ========== API TỒN KHO ==========
 app.get('/api/ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -240,7 +251,7 @@ app.get('/api/ton-kho', async (req, res) => {
     res.status(200).json({
       message: '✅ Danh sách máy còn tồn kho',
       total: items.length,
-      items,
+      items
     });
   } catch (error) {
     console.error('❌ Lỗi khi lấy tồn kho:', error.message);
@@ -248,7 +259,7 @@ app.get('/api/ton-kho', async (req, res) => {
   }
 });
 
-// ===== API cảnh báo tồn kho =====
+// ========== API CẢNH BÁO ==========
 app.get('/api/canh-bao-ton-kho', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'in_stock' });
@@ -280,7 +291,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
     res.status(200).json({
       message: '✅ Danh sách hàng tồn kho thấp (dưới 2)',
       total: result.length,
-      items: result,
+      items: result
     });
   } catch (error) {
     console.error('❌ Lỗi khi lấy danh sách cảnh báo tồn kho:', error.message);
@@ -288,7 +299,7 @@ app.get('/api/canh-bao-ton-kho', async (req, res) => {
   }
 });
 
-// ===== API danh sách xuất hàng =====
+// ========== BỔ SUNG 3 API QUẢN LÝ XUẤT HÀNG ==========
 app.get('/api/xuat-hang-list', async (req, res) => {
   try {
     const items = await Inventory.find({ status: 'sold' }).sort({ sold_date: -1 });
@@ -340,6 +351,10 @@ app.delete('/api/xuat-hang/:id', async (req, res) => {
     res.status(500).json({ message: '❌ Lỗi khi xoá đơn xuất', error: error.message });
   }
 });
+
+const userRoutes = require('./routes/user');   // <-- Bổ sung import user routes
+
+app.use('/api', userRoutes);                    // <-- Bổ sung đăng ký user routes
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
