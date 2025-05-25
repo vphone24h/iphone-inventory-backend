@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyToken, requireAdmin } = require('../middleware/auth'); // Bổ sung import middleware
 
 const router = express.Router();
 
@@ -77,7 +78,8 @@ router.post('/admin-login', async (req, res) => {
 });
 
 // ===== Bổ sung API lấy danh sách user chưa duyệt =====
-router.get('/pending-users', async (req, res) => {
+// Chỉ admin mới được gọi API này
+router.get('/pending-users', verifyToken, requireAdmin, async (req, res) => {
   try {
     const pendingUsers = await User.find({ approved: false });
     res.status(200).json(pendingUsers);
@@ -87,7 +89,8 @@ router.get('/pending-users', async (req, res) => {
 });
 
 // ===== Bổ sung API duyệt user =====
-router.post('/approve-user/:id', async (req, res) => {
+// Chỉ admin mới được gọi API này
+router.post('/approve-user/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
     await User.findByIdAndUpdate(userId, { approved: true });
