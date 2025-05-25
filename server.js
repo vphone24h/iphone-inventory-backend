@@ -338,10 +338,8 @@ app.delete('/api/xuat-hang/:id', async (req, res) => {
     res.status(500).json({ message: '❌ Lỗi khi xoá đơn xuất', error: error.message });
   }
 });
-
-const userRoutes = require('./routes/user');   // <-- Bổ sung import user routes
-
-app.use('/api', userRoutes);                    // <-- Bổ sung đăng ký user routes
+ // <-- Bổ sung import user routes
+// <-- Bổ sung đăng ký user routes
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
