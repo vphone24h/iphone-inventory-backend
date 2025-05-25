@@ -1,12 +1,11 @@
-require('dotenv').config(); // THÊM DÒNG NÀY Ở ĐẦU FILE!
+require('dotenv').config(); // BẮT BUỘC DÒNG NÀY Ở ĐẦU
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('./models/User');
 
-// Thay thông tin email và mật khẩu bên dưới theo ý bạn!
 const ADMIN_EMAIL = "vphone24h1@gmail.com";
-const ADMIN_PASSWORD = "0985630451vU"; // Đổi sang mật khẩu mạnh!
+const ADMIN_PASSWORD = "0985630451vU";
 
 async function createAdmin() {
   await mongoose.connect(process.env.MONGODB_URI, {
@@ -14,7 +13,6 @@ async function createAdmin() {
     useUnifiedTopology: true,
   });
 
-  // Kiểm tra xem admin đã tồn tại chưa
   const existing = await User.findOne({ email: ADMIN_EMAIL });
   if (existing) {
     console.log("❗️Admin đã tồn tại!");
