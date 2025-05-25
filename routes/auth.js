@@ -54,6 +54,11 @@ router.post('/admin-login', async (req, res) => {
       return res.status(400).json({ message: '❌ Mật khẩu sai' });
     }
 
+    // Kiểm tra role phải là admin
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: '❌ Chỉ admin mới được phép đăng nhập tại đây' });
+    }
+
     // Kiểm tra user đã được duyệt chưa
     if (!user.approved) {
       return res.status(403).json({ message: '⚠️ Tài khoản chưa được admin phê duyệt' });
